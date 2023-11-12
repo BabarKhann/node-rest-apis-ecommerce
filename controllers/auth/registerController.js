@@ -1,7 +1,8 @@
 import Joi from 'joi';
-
+import bcrypt from 'bcrypt';
 import CustomErrorHandler from '../../services/CustomErrorHandler';
 import { User } from '../../models';
+import JwtService from '../../services/JwtService';
 
 const registerController = {
   //validation
@@ -31,9 +32,35 @@ const registerController = {
           CustomErrorHandler.alreadyExist('This email is already taken.')
         );
       }
-    } catch (err) {
-      return next(err);
+    } catch (error) {
+      return next(error);
     }
+
+    const { name, email, password } = req.body;
+
+    // Hash password
+    const hashedPass = await bcrypt.hash(password, 10);
+
+    // prepare the model
+    const user = new User({
+      name,
+      email,
+      password: hashedPass,
+    });
+
+    let access_token;
+
+    try {
+      const result = await user.save();
+      console.log(result);
+
+      //Token
+      access_token = JwtService.sign({ _id: result._id, role: result.role });
+    } catch (error) {
+      return next(error);
+    }
+
+    return res.json({ access_token });
   },
 };
 
