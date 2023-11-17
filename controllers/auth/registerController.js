@@ -1,8 +1,11 @@
 import Joi from 'joi';
 import bcrypt from 'bcrypt';
+
 import CustomErrorHandler from '../../services/CustomErrorHandler';
-import { RefreshToken, User } from '../../models';
 import JwtService from '../../services/JwtService';
+
+import { RefreshToken, User } from '../../models';
+
 import { REFRESH_SECRET } from '../../config';
 
 const registerController = {
@@ -65,6 +68,7 @@ const registerController = {
       );
       // database whitelist
       await RefreshToken.create({ token: refresh_token });
+      //
     } catch (error) {
       return next(error);
     }

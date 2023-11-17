@@ -1,9 +1,10 @@
 import Joi from 'joi';
 import bcrypt from 'bcrypt';
 
-import { User } from '../../models';
+import { RefreshToken, User } from '../../models';
 import CustomErrorHandler from '../../services/CustomErrorHandler';
 import JwtService from '../../services/JwtService';
+import { REFRESH_SECRET } from '../../config';
 
 const loginController = {
   async login(req, res, next) {
@@ -22,6 +23,7 @@ const loginController = {
     }
 
     let access_token;
+    let refresh_token;
 
     try {
       const user = await User.findOne({ email: req.body.email });
@@ -35,11 +37,19 @@ const loginController = {
 
       //token
       access_token = JwtService.sign({ _id: user._id, role: user.role });
+      refresh_token = JwtService.sign(
+        { _id: user._id, role: user.role },
+        '1y',
+        REFRESH_SECRET
+      );
+
+      await RefreshToken.create({ token: refresh_token });
+      //
     } catch (error) {
       return next(error);
     }
 
-    return res.json({ access_token });
+    return res.json({ access_token, refresh_token });
   },
 };
 

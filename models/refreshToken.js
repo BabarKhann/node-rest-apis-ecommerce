@@ -3,7 +3,7 @@ const { Schema } = Mongoose;
 
 const refreshTokenSchema = Schema(
   {
-    token: { type: String, unique: true },
+    token: { type: String, createIndexes: true },
   },
   { timestamps: false }
 );
