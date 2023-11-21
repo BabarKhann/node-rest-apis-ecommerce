@@ -72,7 +72,7 @@ const loginController = {
       return next(new Error('Something went wrong in the database'));
     }
 
-    res.json({ status: 1 });
+    return res.json({ status: 1 });
   },
 };
 
