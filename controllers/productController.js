@@ -6,6 +6,7 @@ import { Product } from '../models';
 import multer from 'multer';
 import CustomErrorHandler from '../services/CustomErrorHandler';
 import Joi from 'joi';
+import productSchema from '../validators/product';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
@@ -31,12 +32,6 @@ const productController = {
 
       const filePath = req.file.path;
       //validation
-      const productSchema = Joi.object({
-        name: Joi.string().required(),
-        price: Joi.number().required(),
-        size: Joi.string().required(),
-      });
-
       const { error } = productSchema.validate(req.body);
 
       if (error) {
@@ -65,6 +60,53 @@ const productController = {
       }
 
       return res.status(201).json(document);
+    });
+  },
+
+  async update(req, res, next) {
+    handleMultiPartData(req, res, async (err) => {
+      if (err) {
+        return next(CustomErrorHandler.serverError(err.message));
+      }
+
+      let filePath;
+      if (req.file) {
+        filePath = req.file.path;
+      }
+
+      //validation
+      const { error } = productSchema.validate(req.body);
+
+      if (error) {
+        if (req.file) {
+          // delete the uploaded file
+          fs.unlink(`${appRoot}/${filePath}`, (err) => {
+            if (err) {
+              return next(CustomErrorHandler.serverError(err.message));
+            }
+          });
+        }
+
+        return next(error);
+      }
+
+      const { name, price, size } = req.body;
+      let document;
+      try {
+        document = await Product.findOneAndUpdate(
+          { _id: req.params.id },
+          {
+            name,
+            price,
+            size,
+            ...(req.file && { image: filePath }),
+          },
+          { new: true }
+        );
+      } catch (error) {
+        return next(error);
+      }
+      return res.status(200).json(document);
     });
   },
 };
